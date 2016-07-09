@@ -217,6 +217,7 @@ module.exports = yeoman.generators.Base.extend({
   },
 
   getLatestVersions: function () {
+    var packageName;
     var cb = this.async();
     var count = Object.keys(this.usedDependencies).length;
 
@@ -224,15 +225,18 @@ module.exports = yeoman.generators.Base.extend({
       return cb();
     }
 
-    for (var packageName in this.usedDependencies) {
-      npmLatest(packageName, {timeout: 1900}, function (err, result) {
-        if (!err && result.name && result.version) {
-          this.usedDependencies[result.name] = result.version;
-        }
-        if (!--count) {
-          cb();
-        }
-      }.bind(this));
+    function processDependencies(err, result) {
+      if (!err && result.name && result.version) {
+        /* jshint validthis: true */
+        this.usedDependencies[result.name] = result.version;
+      }
+      if (!--count) {
+        cb();
+      }
+    }
+
+    for (packageName in this.usedDependencies) {
+      npmLatest(packageName, {timeout: 1900}, processDependencies.bind(this));
     }
   },
 
